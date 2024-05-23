@@ -63,7 +63,9 @@ def simple_check():
 def train_agent(env, total_time_steps, lr, exploration_fraction, weights_path, verbose):
     check_env(env, True, True)
     custom_net_arch = [64, 512, 256]  # [64, 64, 64]  #
-    agent = sb3.DQN('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), train_freq=(50, "episode"), gamma=0.15, verbose=verbose, learning_rate=lr, exploration_fraction=exploration_fraction)
+    agent = sb3.DQN('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), train_freq=(2, "episode"),
+                    gamma=0.005, verbose=verbose, learning_rate=lr, exploration_fraction=exploration_fraction)
+
     print("NET: ", agent.q_net)
     print("TARGET NET: ", agent.q_net_target)
 
@@ -133,7 +135,7 @@ if __name__ == "__main__":
         is_train = True  # False
         if is_train:
             env = gym.make("QuantumControl-v0", num_actions=100, num_partitions=zz, max_infidelity=0.005, is_train=True)
-            train_agent(env, total_time_steps=1500000, lr=0.001, exploration_fraction=0.25, weights_path=weights_path, verbose=1)
+            train_agent(env, total_time_steps=5000000, lr=0.0001, exploration_fraction=0.25, weights_path=weights_path, verbose=1)
         else:
             env = gym.make("QuantumControl-v0", num_actions=100, num_partitions=zz, max_infidelity=0.005, is_train=False)
         print(f"\n--------------- TRAINING COMPLETE! -----------------\n")

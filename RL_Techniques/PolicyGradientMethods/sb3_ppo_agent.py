@@ -65,7 +65,7 @@ def simple_check():
 def train_agent(env, total_time_steps, lr, exploration_fraction, weights_path, verbose):
     check_env(env, True, True)
     custom_net_arch = [64, 512, 256]
-    agent = sb3.PPO('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), n_epochs=50, gamma=0.9995,
+    agent = sb3.PPO('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), n_epochs=50, gamma=0.05,
                     ent_coef=exploration_fraction, verbose=verbose, learning_rate=lr, )
 
     agent.learn(total_timesteps=total_time_steps)
@@ -87,7 +87,7 @@ def run_agent(env, episode_max, weights_path):
         truncate = False
         obs, _ = env.reset()
         actions_ = []
-        i = 1
+        i = 0
         while not (terminate or truncate):
             if i == 0:
                 action = env.action_space.sample()
