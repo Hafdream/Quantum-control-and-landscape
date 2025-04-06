@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.cluster import KMeans, DBSCAN
-import pandas as pd
-from collections import Counter
-from scipy.spatial import ConvexHull
+from scipy.spatial import Delaunay
+from shapely.geometry import Polygon, MultiPoint
+from shapely.ops import cascaded_union, polygonize
+from collections import defaultdict
+import math
 
 
-# Generate sample points (replace this with your dataset)
 def sparsity_analysis_kde(x, y, threshold, n_clusters):
     # Perform kernel density estimation
     kde = gaussian_kde([x, y])
@@ -82,6 +83,59 @@ def sparsity_analysis_kde(x, y, threshold, n_clusters):
     plt.show()
 
 
+# Function to calculate alpha shape (concave hull)
+def alpha_shape(points, alpha):
+    if len(points) < 4:
+        # If fewer than 4 points, directly return 0 area or treat as a degenerate case
+        return 0
+    try:
+        # Perform Delaunay triangulation
+        tri = Delaunay(points)  # qhull_options='QJ')
+        # Find edges of the triangles
+        edges = defaultdict(float)
+        for ia, ib, ic in tri.simplices:
+            a = points[ia]
+            b = points[ib]
+            c = points[ic]
+            # Lengths of sides of the triangle
+            ab = np.linalg.norm(a - b)
+            bc = np.linalg.norm(b - c)
+            ca = np.linalg.norm(c - a)
+
+            # Calculate the circumradius (radius of the circle circumscribing the triangle)
+            s = (ab + bc + ca) / 2.0
+            area = math.sqrt(s * (s - ab) * (s - bc) * (s - ca))
+            if area == 0:
+                circum_r = np.inf
+            else:
+                circum_r = (ab * bc * ca) / (4.0 * area)
+            # Keep the edge if the circumradius is smaller than 1/alpha
+            if circum_r < 1.0 / alpha:
+                edges[tuple(sorted([ia, ib]))] += 1
+                edges[tuple(sorted([ib, ic]))] += 1
+                edges[tuple(sorted([ic, ia]))] += 1
+
+        # Create a set of boundary edges
+        boundary_edges = [key for key, val in edges.items() if val == 1]
+
+        # Get the boundary points from the edges
+        boundary_points = []
+        for ia, ib in boundary_edges:
+            boundary_points.append(points[ia])
+            boundary_points.append(points[ib])
+
+        # If there are fewer than 3 boundary points, return area = 0
+        if len(boundary_points) < 3:
+            return 0
+
+        # Use Shapely to calculate the area of the polygon formed by the boundary points
+        boundary_polygon = MultiPoint(boundary_points).convex_hull
+
+        return boundary_polygon
+    except Exception as e:
+        return 0
+
+
 def sparsity_analysis_from_raw_data(pca_result, alg_type, plt_title="", number_of_clusters=4):
     labels = []
     if alg_type == "kmeans":
@@ -95,7 +149,7 @@ def sparsity_analysis_from_raw_data(pca_result, alg_type, plt_title="", number_o
         n_clusters_ = 0
         eps_init = 0.1
         while n_clusters_ == 0:
-            dbscan = DBSCAN(eps=eps_init, min_samples=2)
+            dbscan = DBSCAN(eps=eps_init, min_samples=4)
             dbscan.fit(pca_result)
 
             labels = dbscan.labels_
@@ -120,7 +174,9 @@ def sparsity_analysis_from_raw_data(pca_result, alg_type, plt_title="", number_o
         cluster_centers = np.asarray(cluster_centers)
         number_of_clusters = n_clusters_
     print("Number of Clusters: ", number_of_clusters)
+    # print(f"Cluster centers: {cluster_centers}")
     distances = euclidean_distances(cluster_centers)
+    # print(f"Cluster distances: {distances}")
     distances_ = []
     for i in range(len(distances)):
         dist = []
@@ -130,12 +186,21 @@ def sparsity_analysis_from_raw_data(pca_result, alg_type, plt_title="", number_o
         distances_.append(dist)
 
     # print("Cluster centers: ", cluster_centers)
-    # print("Distance cal:", distances_)
+    print("Distance to other clusters (excluding the cluster itself):", distances_)
+    avg_clu_dist_all = []
+    for zx in range(len(distances_)):
+        avg_distance_in_cluster = sum(distances_[zx])/len(distances_[zx])
+        # print(f"Avg distance between a cluster and its and other clusters: {avg_distance_in_cluster}")
+        avg_clu_dist_all.append(avg_distance_in_cluster)
+    print(f"Average distance between clusters: {sum(avg_clu_dist_all)/len(avg_clu_dist_all)}")
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
     colors = np.random.rand(number_of_clusters, 3)
     if pca_result.shape[1] > 2:
         axs[0] = fig.add_subplot(121, projection='3d')
     for i in range(number_of_clusters):
+        boundary_polygon = alpha_shape(cluster_points[i], 0.5)
+        if boundary_polygon != 0:
+            print(f"Area (Alpha shape): {boundary_polygon.area}")
         if pca_result.shape[1] > 2:
             axs[0].scatter(pca_result[labels == i, 0], pca_result[labels == i, 1], pca_result[labels == i, 2],
                            c=colors[i],
@@ -147,18 +212,35 @@ def sparsity_analysis_from_raw_data(pca_result, alg_type, plt_title="", number_o
             axs[0].scatter(pca_result[labels == i, 0], pca_result[labels == i, 1], c=colors[i],
                            label=f'Cluster {i + 1}')
             axs[0].scatter(cluster_centers[:, 0], cluster_centers[:, 1], marker='X', s=10, c='black', label='Centroids')
+        if boundary_polygon != 0:
+            x, y = boundary_polygon.exterior.xy
+            axs[0].plot(x, y, 'r-', label=f'Alpha Shape (alpha={0.5})')
+
+        # ############################################################################
+        clust_dist = euclidean_distances(cluster_points[i])
+        clust_dist_ = []
+        for i in range(len(clust_dist)):
+            dist = []
+            for j in range(len(clust_dist[i])):
+                if i != j:
+                    dist.append(clust_dist[i][j])
+            clust_dist_.extend(dist)
+        # print(distances_)
+        avg_distance_clust_pts = sum(clust_dist_)/len(clust_dist_)
+        print(f"Clus pts avg dis: {avg_distance_clust_pts}")
+        # ############################################################################
 
     axs[0].set_xlabel('X')
     axs[0].set_ylabel('Y')
     if pca_result.shape[1] > 2:
         axs[0].set_zlabel('Z')
-    axs[0].set_title(alg_type + '-Clustering Plot-'+plt_title)
+    axs[0].set_title(alg_type + ' - clustering Plot: '+plt_title)
     # Plot pairwise distances
     for z in range(len(distances_)):
         axs[1].plot(range(len(distances_[z])), distances_[z], marker='o', linestyle='-')
-    axs[1].set_title(alg_type + '-Cluster Distances-'+plt_title)
-    axs[1].set_xlabel('Point Index')
-    axs[1].set_ylabel('Distance')
+    axs[1].set_title(alg_type + ' - inter cluster distances: '+plt_title)
+    axs[1].set_xlabel('Number of Clusters (Point Index)')
+    axs[1].set_ylabel('Distance between clusters')
     axs[1].set_ylim(0)
     # Show plot
     plt.tight_layout()
@@ -170,38 +252,21 @@ def calculate_cluster_area(cluster_points):
     # Compute convex hull for each cluster
     cluster_areas = []
     cluster_distance = []
-    plt.figure(figsize=(8, 8))
+    # plt.figure(figsize=(8, 8))
+    fig, ax = plt.subplots()
     for c in range(len(cluster_points)):
         cluster_pts = cluster_points[c]
-        hull = ConvexHull(cluster_pts)
-        # Calculate area of convex hull
-        area = hull.volume
+        boundary_polygon = alpha_shape(cluster_pts, 0.5)
+        if boundary_polygon != 0:
+            cluster_areas.append(boundary_polygon.area)
+            # print(f"Area (Alpha shape): {boundary_polygon.area}")
+        # Plot the points
+        ax.plot(cluster_pts[:, 0], cluster_pts[:, 1], 'o', label='Cluster Points')
+        # Plot the boundary polygon
+        if boundary_polygon != 0:
+            x, y = boundary_polygon.exterior.xy
+            ax.plot(x, y, 'r-', label=f'Alpha Shape (alpha={0.5})')
 
-        if len(cluster_pts[0]) == 2:
-            print("Area of cluster {}: {}".format(c, area))
-            plt.scatter(cluster_pts[:, 0], cluster_pts[:, 1], s=10, color='blue', label='Cluster Points')
-            plt.xlim(-1, 1)
-            plt.ylim(-1, 1)
-            # Plot the convex hull
-            for simplex in hull.simplices:
-                plt.plot(cluster_pts[simplex, 0], cluster_pts[simplex, 1], 'r--', linewidth=2)
-            plt.title('Convex Hull around Cluster Points')
-            plt.xlabel('X-axis')
-            plt.ylabel('Y-axis')
-
-
-        else:
-            print("Volume of cluster {}: {}".format(c, area))
-        cluster_areas.append(area)
-
-        # pairwise_distances = np.linalg.norm(cluster_pts[:, np.newaxis, :] - cluster_pts[np.newaxis, :, :],
-        #                                     axis=-1)
-        #
-        # # Exclude distances between the same points (diagonal elements)
-        # np.fill_diagonal(pairwise_distances, np.nan)
-        #
-        # # Calculate the average distance between points in the cluster
-        # average_distance = np.nanmean(pairwise_distances)
         distances = euclidean_distances(cluster_pts)
         distances_ = []
         for i in range(len(distances)):
@@ -210,34 +275,13 @@ def calculate_cluster_area(cluster_points):
                 if i != j:
                     dist.append(distances[i][j])
             distances_.extend(dist)
-        # print(distances_)
         average_distance = sum(distances_)/len(distances_)
         cluster_distance.append(average_distance)
-        print("Average distance between points in the cluster:", average_distance)
-    # plt.legend()
     plt.show()
-    print("Area sum:", np.sum(cluster_areas))
-    print("Average distance(for all clusters): ", sum(cluster_distance)/len(cluster_distance))
+    print("Average Area:", sum(cluster_areas)/len(cluster_areas))
+    print("Average intra cluster distance: ", sum(cluster_distance)/len(cluster_distance))
     return cluster_areas
 
 
 if __name__ == "__main__":
-
     random.seed(87)
-    n = 759001  # 6900
-    s = 250000  # desired sample size
-    skip = sorted(random.sample(range(0, n + 1), n - s))  # the 0-indexed header will not be included in the skip list
-    # print("Skip: ", skip)
-    x = pd.read_csv("./results/4_param_fidelity_results_25_all.csv")  # , skiprows=skip)
-    print(x.shape)
-    # print(x.head())
-    x_ = x.values.tolist()
-    x_f, fid_ = [], []
-    a, b, c, d, e = [], [], [], [], []
-    for i in range(len(x_)):
-        fidelity = x_[i][0]
-        if fidelity > 0.95:
-            fid_.append(x_[i][0])
-            x_f.append(x_[i][1:])
-    cluster_p = sparsity_analysis_from_raw_data(np.asarray(x_f), 'dbscan')
-    calculate_cluster_area(cluster_p)

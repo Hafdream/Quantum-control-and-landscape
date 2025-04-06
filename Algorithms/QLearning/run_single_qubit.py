@@ -9,8 +9,10 @@ def run(N):
     env = Maze(N)
     ep_max = 500  # 5000  # 500
     RL = QLearningTable(actions=env.action_space)  # list(range(env.n_actions)))
-    fid_10 = 0
+    # fid_10 = 0
     actions_ = []
+    action_best = []
+    fid_best = 0.0
     for episode in range(ep_max):
         done = False
         observation = env.reset()
@@ -28,12 +30,16 @@ def run(N):
             RL.learn(str(observation), action, reward, str(observation_), print_once)
             print_once = False
             observation = observation_
+            if len(actions_) == N and fid >= fid_best:
+                fid_best = fid
+                action_best = actions_
             if done and len(actions_) == N:
                 print(f"\tDone?: {done}, action: {actions_} ")
                 # if episode >= ep_max - 11:
                 # HOW TO MAKE SURE THE FIDELITY IS FOR THE CORRECT PULSE?????? - solved by using done variable
                 # The last value of done(for the current episode) will decide whether to go for next episode or not
-                fid_10 = fid  # max(fid_10, fid)
+                fid_best = fid
+                action_best = actions_
                 # break
             iter_ += 1
             print(f"\tEp (iter)-{iter_} fid: {fid}")
@@ -42,7 +48,7 @@ def run(N):
     # while len(actions_) < N:
     #     actions_.append(0)  # Add a pulse of zero amplitude if the episode terminates early (to have N param Q landscape)
     # print('\t\tFinal_fidelity=', fid_10)
-    return fid_10, actions_
+    return fid_best, action_best
 
 
 def plot_result(fid, N):
@@ -88,11 +94,11 @@ def main(totalTests, N):
     print("FID: ", final_fid)
     plot_result(final_fid, N)
     df = pd.DataFrame(fid_and_pulse)
-    file_path = "../../results/2param_QL_e_greedy_0p9_with_experience_donotuse.csv"
+    file_path = "../../results/2param_QL_e_greedy_0p9_with_experience_20240527.csv"
     df.to_csv(file_path, index=False)
 
     df2 = pd.DataFrame(fid_and_pulse_from_PCA_loadings)
-    file_path2 = "../../results/2param_QL_e_greedy_0p9_from_PCA_loadings_with_experience_donotuse.csv"
+    file_path2 = "../../results/2param_QL_e_greedy_0p9_from_PCA_loadings_with_experience_20240527.csv"
     df2.to_csv(file_path2, index=False)
 
 

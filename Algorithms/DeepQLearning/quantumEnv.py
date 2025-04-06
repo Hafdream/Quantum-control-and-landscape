@@ -74,7 +74,7 @@ class QuantumControlEnv(gym.Env):
             self.tmp_buffer.append(self.action_list[0])
             print(f"MAX RWD: {rwd}")
         elif self.action_rand[pulse_amplitude] >= (100 * self.num_partitions - self.num_partitions) and self.nstep == 1 and self.action_list and (self.action_list[0] in self.tmp_buffer):
-            rwd = -100
+            rwd = 1
             print(f"MIN RWD: {rwd}")
         else:
             rwd = 1 * (err < 0.5) + 10 * (err < 0.15) + 500 * (err < self.max_infidelity)

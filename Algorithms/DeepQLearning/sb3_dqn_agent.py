@@ -64,7 +64,7 @@ def train_agent(env, total_time_steps, lr, exploration_fraction, weights_path, v
     check_env(env, True, True)
     custom_net_arch = [64, 512, 256]  # [64, 64, 64]  #
     agent = sb3.DQN('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), train_freq=(2, "episode"),
-                    gamma=0.005, verbose=verbose, learning_rate=lr, exploration_fraction=exploration_fraction)
+                    gamma=0.0, verbose=verbose, learning_rate=lr, exploration_fraction=exploration_fraction)
 
     print("NET: ", agent.q_net)
     print("TARGET NET: ", agent.q_net_target)
@@ -93,7 +93,7 @@ def run_agent(env, episode_max, weights_path):
             if i == 0:
                 action = env.action_space.sample()
             else:
-                action, _ = agent.predict(obs, deterministic=False)
+                action, _ = agent.predict(obs, deterministic=True)
             i += 1
             actions_.append(env.map_action_to_pulse_amplitudes(action))
             obs, reward, terminate, truncate, info = env.step(action)
@@ -118,24 +118,24 @@ def run_agent(env, episode_max, weights_path):
         tot_fid.append(info['fidelity'])
     Average_fid = sum(tot_fid)/len(tot_fid)
 
-    print(f"\tAverage_fid:{Average_fid}, Pulse:{actions_}")
+    print(f"Iter:{z}, \tAverage_fid:{Average_fid}, Pulse:{actions_}")
     df = pd.DataFrame(fid_pulse)
-    file_path = "../../results/4param_DQN_2.csv"
+    file_path = "../../results/4param_DQN_20240530.csv"
     # df.to_csv(file_path, index=False)
 
     df2 = pd.DataFrame(fid_and_pulse_from_PCA_loadings)
-    file_path2 = "../../results/4param_dqn_pca_loadings2.csv"
+    file_path2 = "../../results/4param_dqn_pca_loadings20240530.csv"
     df2.to_csv(file_path2, index=False)
 
 
 if __name__ == "__main__":
     for zz in [4]:  # [2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
 
-        weights_path = "./dqn_agent_4param_2.zip"
-        is_train = True # False
+        weights_path = "./dqn_agent_4param_20240530.zip"
+        is_train = True
         if is_train:
             env = gym.make("QuantumControl-v0", num_actions=100, num_partitions=zz, max_infidelity=0.005, is_train=True)
-            train_agent(env, total_time_steps=5000000, lr=0.0001, exploration_fraction=0.25, weights_path=weights_path, verbose=1)
+            train_agent(env, total_time_steps=2000000, lr=0.0001, exploration_fraction=0.25, weights_path=weights_path, verbose=1)
         else:
             env = gym.make("QuantumControl-v0", num_actions=100, num_partitions=zz, max_infidelity=0.005, is_train=False)
         print(f"\n--------------- TRAINING COMPLETE! -----------------\n")

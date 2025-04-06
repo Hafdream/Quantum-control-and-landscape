@@ -23,7 +23,6 @@ def count_repeated_rows(df, threshold, use_hash=True):
                 key1 = tuple(row1)
                 # key2 = tuple(row2)
                 if (abs(row1 - row2) <= threshold).all():
-
                     if (abs(row1 - prev_row) > threshold).all():
                         repeated_rows[key1] = repeated_rows.get(key1, 0) + 1
                         prev_row = row1

@@ -41,7 +41,8 @@ class QuantumControlEnv(gym.Env):
     def step(self, action):
         pulse_amplitude = self.map_action_to_pulse_amplitudes(action)
         self.action_rand[pulse_amplitude] = 1 + self.action_rand.get(pulse_amplitude, 0)
-        if self.action_rand[pulse_amplitude] >= 100*self.num_partitions and self.nstep == 0 and self.is_train:
+        if self.action_rand[pulse_amplitude] >= 10*self.num_partitions and self.nstep == 0 and self.is_train:
+            # self.action_rand[pulse_amplitude] = 0
             action = self.action_space.sample()
             pulse_amplitude = self.map_action_to_pulse_amplitudes(action)
             self.action_rand[pulse_amplitude] = 0
@@ -65,7 +66,7 @@ class QuantumControlEnv(gym.Env):
         if self.nstep < self.num_partitions:
             self.action_list.append(pulse_amplitude)
         if err < self.max_infidelity and self.action_list and (self.action_list[0] not in self.tmp_buffer) and (self.nstep == self.num_partitions):
-            rwd = 1 * (err < 0.5) + 10 * (err < 0.15) + 600 * (err < self.max_infidelity) + 5000 * (err < self.max_infidelity)
+            rwd = 1 * (err < 0.5) + 10 * (err < 0.15) + 500 * (err < self.max_infidelity) + 5000 * (err < self.max_infidelity)
             self.tmp_buffer.append(self.action_list[0])
             print(f"MAX RWD: {rwd}")
         elif self.action_rand[pulse_amplitude] >= (100 * self.num_partitions - self.num_partitions) and self.nstep == 1 and self.action_list and (self.action_list[0] in self.tmp_buffer):

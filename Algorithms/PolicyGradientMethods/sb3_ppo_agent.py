@@ -64,8 +64,8 @@ def simple_check():
 
 def train_agent(env, total_time_steps, lr, exploration_fraction, weights_path, verbose):
     check_env(env, True, True)
-    custom_net_arch = [64, 512, 256]
-    agent = sb3.PPO('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), n_epochs=50, gamma=0.05,
+    custom_net_arch = [64, 512, 256]  # [512, 1024, 2048, 512, 256]  # [64, 512, 256]  #
+    agent = sb3.PPO('MlpPolicy', env, policy_kwargs=dict(net_arch=custom_net_arch), n_epochs=5, gamma=0.0,
                     ent_coef=exploration_fraction, verbose=verbose, learning_rate=lr, )
 
     agent.learn(total_timesteps=total_time_steps)
@@ -87,7 +87,7 @@ def run_agent(env, episode_max, weights_path):
         truncate = False
         obs, _ = env.reset()
         actions_ = []
-        i = 0
+        i = 1
         while not (terminate or truncate):
             if i == 0:
                 action = env.action_space.sample()
@@ -118,19 +118,19 @@ def run_agent(env, episode_max, weights_path):
         tot_fid.append(info['fidelity'])
     Average_fid = sum(tot_fid)/len(tot_fid)
 
-    print(f"\tAverage_fid:{Average_fid}, Pulse:{actions_}")
+    print(f"Iter: {z},\tAverage_fid:{Average_fid}, Pulse:{actions_}")
     df = pd.DataFrame(fid_pulse)
-    file_path = "../../results/4param_PPO_rand_initialization2_rand.csv"
+    file_path = "../../results/4param_PPO_rand_initialization_20240916_4.csv"
     df.to_csv(file_path, index=False)
 
     df2 = pd.DataFrame(fid_and_pulse_from_PCA_loadings)
-    file_path2 = "../../results/4param_PPO_rand_initialization_pca_loadings.csv"
+    file_path2 = "../../results/4param_PPO_rand_initialization_pca_loadings_20240916_4.csv"
     df2.to_csv(file_path2, index=False)
 
 
 if __name__ == "__main__":
     for zz in [4]:  # [2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
-        weights_path = "./ppo_agent_4param_num_partitions_50000000.zip"
+        weights_path = "./ppo_agent_4param_num_partitions_20240916_4.zip"
         # train_agent(env, total_time_steps=5000000, lr=0.0001, exploration_fraction=0.15, weights_path=weights_path,  verbose=1)
         is_train = True
         if is_train:
@@ -144,4 +144,4 @@ if __name__ == "__main__":
 
         print(f"\n--------------- TRAINING COMPLETE! -----------------\n")
         print(f"Running test for {zz} partitions")
-        run_agent(env, episode_max=10000, weights_path=weights_path)
+        run_agent(env, episode_max=1000, weights_path=weights_path)

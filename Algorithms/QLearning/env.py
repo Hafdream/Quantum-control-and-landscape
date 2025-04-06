@@ -66,7 +66,7 @@ class Maze:
         fidelity = (np.abs(xx[0, 0])) ** 2
         error = 1 - fidelity
 
-        if error < 0.05:  # 10e-3
+        if error < 0.001:  # 10e-3
             reward = 500
             done = True
             s_lattice = 'terminal'
