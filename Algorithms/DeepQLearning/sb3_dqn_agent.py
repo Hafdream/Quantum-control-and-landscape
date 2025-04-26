@@ -106,7 +106,7 @@ def run_agent(env, episode_max, weights_path):
         fid_pulse.append(fid_p)
 
         # run Dimensionality reduction using using PCA loadings
-        loadings_ = np.load("../../results/4param_PCA_loadings.npy")
+        loadings_ = np.load("../../results_old/4param_PCA_loadings.npy")
         # print("Loadings: ", loadings_)
         pulse_proj = np.dot(actions_, loadings_.T)
         # print("Projected pulse:", pulse_proj)
@@ -120,11 +120,11 @@ def run_agent(env, episode_max, weights_path):
 
     print(f"Iter:{z}, \tAverage_fid:{Average_fid}, Pulse:{actions_}")
     df = pd.DataFrame(fid_pulse)
-    file_path = "../../results/4param_DQN_20240530.csv"
+    file_path = "../../results_old/4param_DQN_20240530.csv"
     # df.to_csv(file_path, index=False)
 
     df2 = pd.DataFrame(fid_and_pulse_from_PCA_loadings)
-    file_path2 = "../../results/4param_dqn_pca_loadings20240530.csv"
+    file_path2 = "../../results_old/4param_dqn_pca_loadings20240530.csv"
     df2.to_csv(file_path2, index=False)
 
 

@@ -92,7 +92,7 @@ def replace(new_gen, population):
 def main(MUT_RATE, TARGET):
     initial_population = initialize_pop()
 
-    loadings_ = np.load("../../results/4param_PCA_loadings.npy")
+    loadings_ = np.load("../../results_old/4param_PCA_loadings.npy")
     found_count = 0
     fid_and_pulse = []
     fid_and_pulse_from_PCA_loadings = []
@@ -141,11 +141,11 @@ def main(MUT_RATE, TARGET):
         found_count = len(fid_and_pulse_from_PCA_loadings)  # += 1
         print(f"Iter: {found_count}")
     df = pd.DataFrame(fid_and_pulse)
-    file_path = "../../results/4param_ga_20240922.csv"
+    file_path = "../../results_old/4param_ga_20240922.csv"
     df.to_csv(file_path, index=False)
 
     df2 = pd.DataFrame(fid_and_pulse_from_PCA_loadings)
-    file_path2 = "../../results/4param_ga_pca_loadings_20240922.csv"
+    file_path2 = "../../results_old/4param_ga_pca_loadings_20240922.csv"
     df2.to_csv(file_path2, index=False)
 
 

@@ -139,7 +139,7 @@ def run_agent(env, episode_max):
 
     print(f"\tAverage_fid:{Average_fid}, Pulse:{actions_}")
     df = pd.DataFrame(fid_pulse)
-    file_path = "../../results/2param_DQN_e_greedy_0p01.csv"
+    file_path = "../../results_old/2param_DQN_e_greedy_0p01.csv"
     # df.to_csv(file_path, index=False)
 
 

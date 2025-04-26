@@ -79,7 +79,7 @@ def main(totalTests, N):
             fid_and_pulse.append(fid_pulse)
 
             # run Dimensionality reduction using using PCA loadings
-            loadings_ = np.load("../../results/2param_PCA_loadings.npy")
+            loadings_ = np.load("../../results_old/2param_PCA_loadings.npy")
             print("Loadings: ", loadings_)
             pulse_proj = np.dot(pulses_, loadings_.T)
             print("Projected pulse:", pulse_proj)
@@ -94,11 +94,11 @@ def main(totalTests, N):
     print("FID: ", final_fid)
     plot_result(final_fid, N)
     df = pd.DataFrame(fid_and_pulse)
-    file_path = "../../results/2param_QL_e_greedy_0p9_with_experience_20240527.csv"
+    file_path = "../../results_old/2param_QL_e_greedy_0p9_with_experience_20240527.csv"
     df.to_csv(file_path, index=False)
 
     df2 = pd.DataFrame(fid_and_pulse_from_PCA_loadings)
-    file_path2 = "../../results/2param_QL_e_greedy_0p9_from_PCA_loadings_with_experience_20240527.csv"
+    file_path2 = "../../results_old/2param_QL_e_greedy_0p9_from_PCA_loadings_with_experience_20240527.csv"
     df2.to_csv(file_path2, index=False)
 
 
