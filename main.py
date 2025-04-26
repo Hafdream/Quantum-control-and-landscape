@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # x = pd.read_csv("./results/3param_ga_pca_loadings_20240922.csv")
     # x = pd.read_csv("./results/4param_ga_pca_loadings_20240922.csv")
 
-    # x = pd.read_csv("./results/2param_QL_e_greedy_0p9_from_PCA_loadings_with_experience_20240527.csv")
+    # x = pd.read_csv("./results/2param_QL_e_greedy_0p9_from_PCA_loadings_20240527.csv")
     # x = pd.read_csv("./results/3param_QL_e_greedy_0p9_from_PCA_loadings_20240917.csv")
     # x = pd.read_csv("./results/4param_QL_e_greedy_0p9_from_PCA_loadings_20240917.csv")
 
